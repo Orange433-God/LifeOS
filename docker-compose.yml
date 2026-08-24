@@ -1,0 +1,69 @@
+# LifeOS 一键部署：MySQL + 后端 + AI 服务 + 前端（Caddy 托管，80 端口对外）
+# 用法：cp deploy/.env.example .env && 编辑 .env && docker compose up -d --build
+name: lifeos
+
+services:
+  db:
+    image: mysql:8.0
+    restart: unless-stopped
+    environment:
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD:?请在 .env 中设置 MYSQL_ROOT_PASSWORD}
+      MYSQL_DATABASE: lifeos
+    command: --character-set-server=utf8mb4 --collation-server=utf8mb4_unicode_ci
+    volumes:
+      - db-data:/var/lib/mysql
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-p$$MYSQL_ROOT_PASSWORD"]
+      interval: 5s
+      timeout: 5s
+      retries: 30
+
+  ai:
+    build:
+      context: .
+      dockerfile: deploy/ai.Dockerfile
+    restart: unless-stopped
+    environment:
+      DEEPSEEK_API_KEY: ${DEEPSEEK_API_KEY:?请在 .env 中设置 DEEPSEEK_API_KEY}
+      DEEPSEEK_BASE_URL: ${DEEPSEEK_BASE_URL:-https://api.deepseek.com/v1}
+      LLM_MODEL_NAME: ${LLM_MODEL_NAME:-deepseek-chat}
+      FAST_CHAT_MODEL: ${FAST_CHAT_MODEL:-deepseek-v4-flash}
+      VL_MODEL_NAME: ${VL_MODEL_NAME:-deepseek-v4-flash-vision-exp}
+    volumes:
+      - ai-data:/app/data
+
+  backend:
+    build:
+      context: .
+      dockerfile: deploy/backend.Dockerfile
+    restart: unless-stopped
+    environment:
+      DATABASE_URL: mysql://root:${MYSQL_ROOT_PASSWORD}@db:3306/lifeos
+      JWT_SECRET: ${JWT_SECRET:?请在 .env 中设置 JWT_SECRET}
+      REFRESH_SECRET: ${REFRESH_SECRET:?请在 .env 中设置 REFRESH_SECRET}
+      PORT: "4000"
+      CLIENT_URL: ${CLIENT_URL:-http://localhost}
+      AI_SERVICE_URL: http://ai:8000
+      DEEPSEEK_API_KEY: ${DEEPSEEK_API_KEY:-}
+      DEEPSEEK_BASE_URL: ${DEEPSEEK_BASE_URL:-https://api.deepseek.com/v1}
+      RECORD_PARSE_MODEL: ${RECORD_PARSE_MODEL:-deepseek-v4-flash}
+    depends_on:
+      db:
+        condition: service_healthy
+    volumes:
+      - uploads:/app/backend/uploads
+
+  web:
+    build:
+      context: .
+      dockerfile: deploy/web.Dockerfile
+    restart: unless-stopped
+    ports:
+      - "80:80"
+    depends_on:
+      - backend
+
+volumes:
+  db-data:
+  ai-data:
+  uploads:

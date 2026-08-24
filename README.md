@@ -95,6 +95,10 @@ npm run dev
 
 其他常用脚本（根目录）：`npm run dev:ai` / `npm run dev:backend` / `npm run dev:frontend` / `npm run build` / `npm run typecheck` / `npm run db:studio`（Prisma Studio 可视化数据）。
 
+### 7. 部署上线（Docker Compose 一键部署）
+
+见 [DEPLOY.md](DEPLOY.md)：MySQL + 后端 + AI 服务 + 前端四容器一键启动，部署完成后通过 `http://服务器IP`（或域名）即可访问、分享给任何人使用。
+
 ## 使用流程
 
 1. **注册** `/register`：邮箱 + 密码（≥6 位），注册成功即自动登录。

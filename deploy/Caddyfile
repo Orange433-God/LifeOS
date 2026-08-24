@@ -1,0 +1,18 @@
+# LifeOS 反向代理：80 端口同时托管前端静态文件 + 转发 /api 到后端
+# 按 IP/域名 http 访问（若配置了域名并需要 HTTPS，可去掉 auto_https off 并配置域名）
+{
+	auto_https off
+}
+
+:80 {
+	root * /srv
+	encode zstd gzip
+
+	handle /api/* {
+		reverse_proxy backend:4000
+	}
+
+	# SPA 路由回退
+	try_files {path} /index.html
+	file_server
+}
