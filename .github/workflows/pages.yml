@@ -30,6 +30,9 @@ jobs:
         env:
           VITE_DEMO_MODE: "1"
           VITE_BASE: /LifeOS/
+      # GitHub Pages 静态托管不认识 SPA 路由：404 时兜底回 index.html
+      - name: SPA fallback (404.html)
+        run: cp frontend/dist/index.html frontend/dist/404.html
       - uses: actions/upload-pages-artifact@v3
         with:
           path: frontend/dist
