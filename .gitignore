@@ -23,6 +23,3 @@ lifeos-ai-service/data/
 
 # 用户上传文件（头像/资源）
 backend/uploads/
-
-# 个人素材（用户自备图/模型，未在应用中引用）
-picture/
