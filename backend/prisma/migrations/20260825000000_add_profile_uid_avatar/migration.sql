@@ -1,0 +1,7 @@
+-- AlterTable
+ALTER TABLE `UserProfile` ADD COLUMN `uid` INT NULL,
+    ADD COLUMN `avatarUrl` VARCHAR(191) NULL;
+
+-- 六位数字用户 ID：AUTO_INCREMENT 自 100000 起（已有用户按序自动回填 100000+）
+ALTER TABLE `UserProfile` MODIFY `uid` INT UNIQUE AUTO_INCREMENT;
+ALTER TABLE `UserProfile` AUTO_INCREMENT = 100000;

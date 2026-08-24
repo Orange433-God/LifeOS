@@ -1,0 +1,345 @@
+// LifeOS 数据模型 — MySQL
+// 注：MySQL 不支持标量数组（String[]）与 enum，
+// 故 preferenceTags 使用 Json 数组存储，avatarStyle 使用 String + 应用层校验。
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "mysql"
+  url      = env("DATABASE_URL")
+}
+
+// ===== 用户账号 =====
+model User {
+  id           String   @id @default(cuid())
+  email        String   @unique
+  passwordHash String
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  profile    UserProfile?
+  assessment LifeAssessment?
+  attributes LifeAttribute?
+  room       Room?
+  companion  Companion?
+  sessions   Session[]
+  records    LifeRecord[]
+  snapshots  AttributeSnapshot[]
+  goals      Goal[]
+  privacy    UserPrivacy?
+  settings   UserSettings?
+  resources  Resource[]
+  collections Collection[]
+}
+
+// ===== 用户资料（一对一）=====
+model UserProfile {
+  id             String   @id @default(cuid())
+  userId         String   @unique
+  nickname       String
+  avatarStyle    String   @default("realistic") // realistic | anime | future | fantasy | minimal
+  avatarConfig   Json // 头像配置对象，由 PUT /api/profile/avatar 更新
+  preferenceTags Json // 偏好标签数组：['成长', '探索', '创造', '生活', '关系']
+  lifeStage      String?
+  birthdate      DateTime? // 生日（设置中心个人信息）
+  gender         String? // 'male' | 'female' | 'secret'
+  bio            String?   @db.Text // 个人简介（≤100 字）
+  uid            Int?      @unique // 六位数字用户 ID（100000 起自增，由数据库 AUTO_INCREMENT 分配）
+  avatarUrl      String? // 自定义头像图片路径（上传后覆盖 emoji 头像）
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+// ===== 人生测评（一对一，阶段 2 使用）=====
+model LifeAssessment {
+  id             String   @id @default(cuid())
+  userId         String   @unique
+  assessmentData Json
+  resultSummary  Json
+  createdAt      DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+// ===== 七维生命属性（一对一，初始全 50）=====
+model LifeAttribute {
+  id        String   @id @default(cuid())
+  userId    String   @unique
+  explore   Float    @default(50)
+  learn     Float    @default(50)
+  execute   Float    @default(50)
+  create    Float    @default(50)
+  health    Float    @default(50)
+  connect   Float    @default(50)
+  stable    Float    @default(50)
+  updatedAt DateTime @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+// ===== 房间（一对一）=====
+model Room {
+  id           String   @id @default(cuid())
+  userId       String   @unique
+  theme        String   @default("modern")
+  customConfig Json
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+// ===== AI 同伴（一对一）=====
+model Companion {
+  id                String   @id @default(cuid())
+  userId            String   @unique
+  name              String   @default("小伴")
+  personality       String   @default("温暖")
+  appearance        Json
+  memory            Json?
+  relationshipStage String   @default("初识")
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+// ===== 登录会话（refresh token，一对多）=====
+model Session {
+  id           String   @id @default(cuid())
+  userId       String
+  refreshToken String   @unique @db.VarChar(512) // JWT 长度约 200 字符，需超过默认 VARCHAR(191)
+  expiresAt    DateTime
+  createdAt    DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+}
+
+// ===== 属性快照（趋势展示，阶段 6：测评/记录后自动落快照，每天一条）=====
+model AttributeSnapshot {
+  id         String   @id @default(uuid())
+  userId     String
+  explore    Float
+  learn      Float
+  execute    Float
+  create     Float
+  health     Float
+  connect    Float
+  stable     Float
+  recordedAt DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, recordedAt])
+}
+
+// ===== 资源中心（阶段 11）=====
+
+model Resource {
+  id          String   @id @default(uuid())
+  userId      String // 上传者
+  name        String
+  description String?  @db.Text
+  type        String // learning | template | tool | material | book | link
+  category    String // 具体分类，如 '设计模板' | '开发工具'
+  fileUrl     String? // 文件存储路径或链接 URL
+  fileSize    Int? // 字节
+  fileType    String? // MIME 类型
+  coverUrl    String?
+  isPublic    Boolean  @default(true)
+  downloadCount Int    @default(0)
+  viewCount   Int      @default(0)
+  tags        Json // MySQL 无标量数组，JSON 存储
+  linkedGoals   Json // 关联的目标 ID 数组（MVP 简化）
+  linkedRecords Json // 关联的记录 ID 数组（MVP 简化）
+  uploadedAt  DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  collections Collection[]
+  downloads   ResourceDownload[]
+  shares      ResourceShare[]
+
+  @@index([userId, uploadedAt])
+  @@index([type])
+}
+
+// 资源分享 token（有效期 7 天，公开访问）
+model ResourceShare {
+  id         String   @id @default(uuid())
+  resourceId String
+  token      String   @unique
+  expiresAt  DateTime
+  createdAt  DateTime @default(now())
+
+  resource Resource @relation(fields: [resourceId], references: [id], onDelete: Cascade)
+
+  @@index([resourceId])
+}
+
+model Collection {
+  id         String   @id @default(uuid())
+  userId     String
+  resourceId String
+  createdAt  DateTime @default(now())
+
+  user     User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  resource Resource @relation(fields: [resourceId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, resourceId])
+}
+
+model ResourceDownload {
+  id           String   @id @default(uuid())
+  userId       String
+  resourceId   String
+  downloadedAt DateTime @default(now())
+
+  resource Resource @relation(fields: [resourceId], references: [id], onDelete: Cascade)
+
+  @@index([resourceId, downloadedAt])
+}
+
+// ===== 用户设置（阶段 10：设置中心）=====
+model UserSettings {
+  id        String @id @default(uuid())
+  userId    String @unique
+  user      User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  // 通知设置
+  aiMessageNotify     Boolean @default(true)
+  goalProgressNotify  Boolean @default(true)
+  growthAchieveNotify Boolean @default(true)
+  systemUpdateNotify  Boolean @default(true)
+  activityRecommend   Boolean @default(true)
+
+  // 免打扰时段
+  quietStart String? // "22:00"
+  quietEnd   String? // "08:00"
+
+  // 主题与外观
+  themeMode  String @default("dark") // light | dark | system
+  themeColor String @default("purple") // purple | blue | green | pink
+  density    String @default("medium") // compact | medium | relaxed
+
+  // 通用设置
+  language   String @default("zh-CN")
+  timeFormat String @default("24h") // 24h | 12h
+  dateFormat String @default("YYYY-MM-DD")
+  weekStart  String @default("monday") // monday | sunday
+  startPage  String @default("home") // home | space | dashboard
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+// ===== 社交与好友（阶段 9）=====
+
+// 好友关系（双向唯一：同一对用户只有一条记录）
+model Friend {
+  id        String   @id @default(uuid())
+  userId    String // 发起请求的用户
+  friendId  String // 被添加的用户
+  status    String   @default("pending") // pending | accepted | rejected | blocked
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([userId, friendId])
+  @@index([userId, status])
+  @@index([friendId, status])
+}
+
+// 房间访问记录（社交核心体验的统计）
+model RoomVisit {
+  id        String   @id @default(uuid())
+  visitorId String // 访客
+  ownerId   String // 房间主人
+  visitedAt DateTime @default(now())
+  duration  Int? // 停留时长（秒）
+
+  @@index([ownerId, visitedAt])
+}
+
+// 隐私设置（一对一）
+model UserPrivacy {
+  id                String   @id @default(uuid())
+  userId            String   @unique
+  roomAccess        String   @default("private") // private | friends_only | public
+  profileVisibility String   @default("friends_only") // friends_only | public
+  allowRoomVisit    Boolean  @default(false) // 是否允许好友访问房间（关闭时等效 private）
+  showOnlineStatus  Boolean  @default(true) // 是否显示在线状态
+  allowSearch       Boolean  @default(true) // 是否允许被搜索
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+// ===== 人生目标（阶段 7：目标与行动系统）=====
+model Goal {
+  id          String    @id @default(uuid())
+  userId      String
+  title       String
+  description String?   @db.Text
+  category    String // 'study' | 'health' | 'career' | 'create' | 'life' | 'other'
+  priority    String // 'high' | 'mid' | 'low'
+  status      String    @default("active") // 'active' | 'paused' | 'completed' | 'abandoned'
+  progress    Int       @default(0) // 0-100（由行动完成率自动计算）
+  targetDate  DateTime? // 目标截止日期
+  completedAt DateTime? // 完成时间（系统自动判定：未超期完成 vs 超期完成）
+  targetAttributes Json // MySQL 无标量数组：目标主要提升的属性，如 ['learn','execute','create']
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  user    User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  actions Action[]
+
+  @@index([userId, status])
+}
+
+// ===== 行动（目标的执行步骤）=====
+model Action {
+  id          String    @id @default(uuid())
+  goalId      String
+  content     String
+  isCompleted Boolean   @default(false)
+  dueDate     DateTime?
+  completedAt DateTime?
+  order       Int       @default(0) // 排序
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  goal Goal @relation(fields: [goalId], references: [id], onDelete: Cascade)
+
+  @@index([goalId, order])
+}
+
+// ===== 人生记录（快速记录 + AI 自动整理，阶段 5）=====
+model LifeRecord {
+  id      String   @id @default(uuid())
+  userId  String
+  // 原始输入
+  rawContent String @db.Text
+  // AI 提取的结构化字段
+  title      String? // AI 生成的标题，如 "完成项目答辩"
+  type       String // 'daily' | 'event' | 'idea' | 'milestone'
+  mood       String? // 'happy' | 'sad' | 'calm' | 'excited' | 'tired' | 'neutral'
+  tags       Json // MySQL 不支持标量数组，标签以 JSON 数组存储
+  summary    String? // AI 生成的一句话总结
+  // 关联（可选）
+  goalId     String? // 关联到某个目标（阶段 6 目标系统接入后使用）
+  recordedAt DateTime // 用户记录的时间（可手动指定，默认 now）
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, recordedAt])
+}

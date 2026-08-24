@@ -1,0 +1,239 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  body {
+    @apply bg-warm-100 font-sans text-warm-800 antialiased;
+  }
+}
+
+@layer components {
+  /* 毛玻璃卡片 */
+  .glass-card {
+    @apply rounded-2xl border border-white/60 bg-white/60 shadow-glass backdrop-blur-xl;
+  }
+
+  /* 主按钮 */
+  .btn-primary {
+    @apply rounded-xl bg-mist-500 px-6 py-3 font-medium text-white shadow-glass transition hover:bg-mist-600 active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-50;
+  }
+
+  /* 输入框 */
+  .input-field {
+    @apply w-full rounded-xl border border-warm-200 bg-white/70 px-4 py-3 text-warm-800 placeholder-warm-400 outline-none backdrop-blur transition focus:border-mist-400 focus:ring-2 focus:ring-mist-200;
+  }
+}
+
+/* 页面背景：暖灰 × 淡蓝 × 柔白 渐变 + 光斑（轻幻想 × 未来科技 × 温暖生活） */
+.app-background {
+  background:
+    radial-gradient(600px 400px at 15% 18%, rgba(132, 176, 220, 0.18), transparent 70%),
+    radial-gradient(520px 520px at 88% 12%, rgba(216, 204, 192, 0.28), transparent 70%),
+    radial-gradient(700px 500px at 72% 92%, rgba(175, 205, 234, 0.2), transparent 70%),
+    linear-gradient(160deg, #fbf9f6 0%, #eff4f9 45%, #f5f1ec 100%);
+}
+
+/* ===== 深色模式（夜晚书房 · 个人空间）===== */
+
+/* 深色背景：墨色 + 蓝紫光晕 */
+.night-background {
+  background:
+    radial-gradient(720px 500px at 88% 8%, rgba(122, 135, 245, 0.16), transparent 65%),
+    radial-gradient(600px 460px at 8% 92%, rgba(94, 200, 240, 0.08), transparent 65%),
+    radial-gradient(520px 420px at 45% 40%, rgba(122, 135, 245, 0.05), transparent 70%),
+    linear-gradient(160deg, #090d18 0%, #0d1322 50%, #101a2e 100%);
+  color: #e2e8f0;
+}
+
+/* 深色毛玻璃面板 */
+.glass-panel {
+  border-radius: 1rem;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  background: rgba(255, 255, 255, 0.05);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+}
+
+/* 强深色玻璃面板：明亮背景上的弹窗（数字空间房间图等亮底场景保证可读） */
+.glass-panel-strong {
+  border-radius: 1rem;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  background: rgba(13, 17, 32, 0.86);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+}
+
+/* 蓝紫渐变按钮（主交互） */
+.btn-gradient {
+  @apply rounded-xl px-4 py-2.5 text-sm font-medium text-white transition active:scale-[0.98];
+  background: linear-gradient(135deg, #7a87f5, #5ec8f0);
+  box-shadow: 0 4px 20px rgba(122, 135, 245, 0.35);
+}
+.btn-gradient:hover {
+  filter: brightness(1.1);
+}
+
+/* 蓝紫渐变进度条 */
+.progress-gradient {
+  background: linear-gradient(90deg, #7a87f5, #5ec8f0);
+}
+
+/* 题目切换淡入动画 */
+@keyframes fade-in {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+.animate-fade-in {
+  animation: fade-in 0.35s ease;
+}
+
+/* 数字房间地板纹理（木板线条 + 由浅入深的透视感） */
+.room-floor {
+  background:
+    repeating-linear-gradient(90deg, rgba(255, 255, 255, 0.02) 0 2px, transparent 2px 90px),
+    repeating-linear-gradient(0deg, rgba(255, 255, 255, 0.025) 0 1px, transparent 1px 34px),
+    linear-gradient(to bottom, rgba(26, 34, 62, 0.55), rgba(9, 13, 24, 0.9));
+  border-top: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+/* 对话面板从右侧滑入 */
+@keyframes slide-in-right {
+  from {
+    opacity: 0;
+    transform: translateX(24px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+.animate-slide-in-right {
+  animation: slide-in-right 0.25s ease;
+}
+
+/* 记录成功 "+1" 飘字 */
+@keyframes rise-fade {
+  from {
+    opacity: 1;
+    transform: translateY(0);
+  }
+  to {
+    opacity: 0;
+    transform: translateY(-36px);
+  }
+}
+.animate-rise-fade {
+  animation: rise-fade 1s ease-out forwards;
+}
+
+/* 打字指示点 */
+@keyframes typing-blink {
+  0%,
+  80%,
+  100% {
+    opacity: 0.25;
+    transform: translateY(0);
+  }
+  40% {
+    opacity: 1;
+    transform: translateY(-3px);
+  }
+}
+.typing-dots span {
+  display: inline-block;
+  width: 6px;
+  height: 6px;
+  margin-right: 4px;
+  border-radius: 9999px;
+  background: #94a3b8;
+  animation: typing-blink 1.2s infinite;
+}
+.typing-dots span:nth-child(2) {
+  animation-delay: 0.15s;
+}
+.typing-dots span:nth-child(3) {
+  animation-delay: 0.3s;
+}
+
+/* ===== 首页仪表盘（深色底 × 浅色卡片）===== */
+
+/* 浅色卡片：深色背景上的半透明毛玻璃卡（悬浮不突兀） */
+.home-card {
+  border-radius: 1.25rem;
+  border: 1px solid rgba(255, 255, 255, 0.35);
+  background: linear-gradient(160deg, rgba(241, 239, 250, 0.76) 0%, rgba(232, 229, 245, 0.69) 55%, rgba(227, 222, 241, 0.62) 100%);
+  backdrop-filter: blur(16px) saturate(1.25);
+  -webkit-backdrop-filter: blur(16px) saturate(1.25);
+  box-shadow: 0 10px 30px rgba(5, 8, 20, 0.4);
+  color: #2b2847;
+}
+
+/* 深色玻璃卡（与 glass-panel 同族，圆角更大） */
+.home-dark-card {
+  border-radius: 1.25rem;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  background: rgba(255, 255, 255, 0.045);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+}
+
+/* 月亮光晕呼吸 */
+@keyframes glow-pulse {
+  0%,
+  100% {
+    opacity: 0.7;
+  }
+  50% {
+    opacity: 1;
+  }
+}
+.animate-glow-pulse {
+  animation: glow-pulse 6s ease-in-out infinite;
+}
+
+
+/* 数字空间漫游模式：背景缓慢环游（缓慢放大+平移，来回往复） */
+@keyframes room-tour {
+  from {
+    transform: scale(1) translate(0, 0);
+  }
+  to {
+    transform: scale(1.08) translate(-1.5%, -1%);
+  }
+}
+
+/* ===== 全局滚动条：默认隐藏（透明），悬停滚动容器时才显示细窄半透明滑块 ===== */
+* {
+  scrollbar-width: thin; /* Firefox：细滚动条 */
+  scrollbar-color: transparent transparent; /* 默认完全透明（不可见） */
+}
+*:hover {
+  scrollbar-color: rgba(120, 120, 150, 0.38) transparent;
+}
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+::-webkit-scrollbar-thumb {
+  background: transparent;
+  border-radius: 999px;
+}
+*:hover::-webkit-scrollbar-thumb {
+  background: rgba(120, 120, 150, 0.38);
+}
+::-webkit-scrollbar-thumb:hover {
+  background: rgba(120, 120, 150, 0.6);
+}
+::-webkit-scrollbar-corner {
+  background: transparent;
+}
