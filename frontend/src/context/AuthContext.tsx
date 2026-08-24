@@ -7,6 +7,7 @@ import {
   type ReactNode,
 } from 'react'
 import { api, clearTokens, getAccessToken, getRefreshToken, setTokens } from '../lib/api'
+import { IS_DEMO } from '../lib/demoMode'
 import type { ApiResponse, AuthTokens, CreateProfileInput, ProfileBundle } from '../lib/types'
 
 export type AuthState =
@@ -39,6 +40,16 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   // 首次挂载：本地有 token 则拉取资料恢复登录态
   useEffect(() => {
     const init = async () => {
+      // 演示模式：无需登录，直接以示例账号进入
+      if (IS_DEMO) {
+        try {
+          const profile = await loadProfile()
+          setState({ status: 'authed', profile })
+        } catch {
+          setState({ status: 'guest' })
+        }
+        return
+      }
       if (!getAccessToken()) {
         setState({ status: 'guest' })
         return

@@ -1,5 +1,7 @@
 import axios, { AxiosError, type InternalAxiosRequestConfig } from 'axios'
 import type { ApiResponse, AuthTokens } from './types'
+import { IS_DEMO } from './demoMode'
+import { demoAdapter } from './demoAdapter'
 
 const ACCESS_TOKEN_KEY = 'lifeos.accessToken'
 const REFRESH_TOKEN_KEY = 'lifeos.refreshToken'
@@ -18,7 +20,11 @@ export const clearTokens = (): void => {
 }
 
 /** axios 实例：请求自动携带 access token；401 自动刷新一次并重放 */
-export const api = axios.create({ baseURL: '/api', timeout: 15000 })
+export const api = axios.create({
+  baseURL: '/api',
+  timeout: 15000,
+  ...(IS_DEMO ? { adapter: demoAdapter } : {}),
+})
 
 api.interceptors.request.use((config) => {
   const token = getAccessToken()

@@ -49,6 +49,7 @@ export default function GrowthPage() {
     if (sm.status === 'fulfilled') setSummary(sm.value)
     else setSummaryError(true)
     setLoading(false)
+    setSummaryLoading(false)
   }, [period])
 
   useEffect(() => {

@@ -2,6 +2,7 @@ import { Route, BrowserRouter, Routes, Navigate } from 'react-router-dom'
 import { AuthProvider } from './context/AuthContext'
 import { ErrorBoundary } from './components/ErrorBoundary'
 import { CompanionDock } from './components/CompanionDock'
+import { IS_DEMO } from './lib/demoMode'
 import ShareResourcePage from './pages/ShareResourcePage'
 import { GuestOnly, RequireNoProfile, RequireProfile } from './components/RouteGuards'
 import LoginPage from './pages/LoginPage'
@@ -26,7 +27,8 @@ import ResourcesPage from './pages/ResourcesPage'
 export default function App() {
   return (
     <AuthProvider>
-      <BrowserRouter>
+      {/* basename 跟随 Vite base（本地 '/'，GitHub Pages '/LifeOS/'） */}
+      <BrowserRouter basename={import.meta.env.BASE_URL}>
         <ErrorBoundary>
         <Routes>
           <Route
@@ -190,6 +192,11 @@ export default function App() {
         </Routes>
         {/* 全局 AI 伙伴悬浮窗（AI 伙伴页/设置页由组件内部排除） */}
         <CompanionDock />
+        {IS_DEMO && (
+          <span className="pointer-events-none fixed bottom-4 left-4 z-[45] rounded-full border border-iris-400/40 bg-night-900/70 px-3 py-1.5 text-xs text-slate-200 backdrop-blur">
+            演示模式 · 示例数据仅供浏览
+          </span>
+        )}
         </ErrorBoundary>
       </BrowserRouter>
     </AuthProvider>

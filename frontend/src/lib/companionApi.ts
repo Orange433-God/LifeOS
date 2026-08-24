@@ -1,5 +1,7 @@
 import { ensureFreshAccessToken, getAccessToken } from './api'
 import type { ApiResponse } from './types'
+import { IS_DEMO } from './demoMode'
+import { demoChatReply } from './demoData'
 
 // ===== AI 伙伴对话流式接口（fetch + ReadableStream，不经 axios 拦截器）=====
 
@@ -36,6 +38,18 @@ interface SseEvent {
  * 401 时复用 axios 的刷新逻辑换新 token 后重试一次。
  */
 export const streamCompanionChat = async (message: string, callbacks: StreamCallbacks): Promise<void> => {
+  // 演示模式：本地逐字模拟打字机回复（不发网络请求）
+  if (IS_DEMO) {
+    const { reply, suggestedAction } = demoChatReply(message)
+    await new Promise((r) => setTimeout(r, 350))
+    for (const char of reply) {
+      callbacks.onDelta(char)
+      await new Promise((r) => setTimeout(r, 28))
+    }
+    callbacks.onDone({ reply, suggestedAction })
+    return
+  }
+
   let token = getAccessToken()
   let response = await postChat(token ?? '', message)
 
